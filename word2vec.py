@@ -30,13 +30,11 @@ class Word2VecDeepNeuralNet:
                         if j == 0:
                             continue
                         index = i + j
-                        if index < 0:
-                            continue
-                        elif index >= len(word_list):
+                        if index < 0 or index >= len(word_list):
                             continue
                         else:
-                            one_hot_encoded_center_word = get_one_hot_encoded_word(len(self.vocab), word_list[i])
-                            softmax_output = self.forward_prop(one_hot_encoded_center_word)
+                            encoded_center_word = get_one_hot_encoded_word(len(self.vocab), word_list[i])
+                            softmax_output = self.forward_prop(encoded_center_word)
                              # pass center and context words
                             self.back_prop_grad_update(softmax_output, word_list[i], word_list[j])
 
