@@ -35,19 +35,20 @@ class Word2VecDeepNeuralNet:
                         elif index >= len(word_list):
                             continue
                         else:
-                            one_hot_encoded_context_word = get_one_hot_encoded_word(len(self.vocab), word_list[j])
-                            softmax_output = self.forward_prop(one_hot_encoded_context_word)
-                            y_truth = self.get_one_hot_encoded_word(vocab_len, word_list[j])
-                            self.back_prop_grad_update(softmax_output, y_truth, word_list[j])
+                            one_hot_encoded_center_word = get_one_hot_encoded_word(len(self.vocab), word_list[i])
+                            softmax_output = self.forward_prop(one_hot_encoded_center_word)
+                             # pass center and context words
+                            self.back_prop_grad_update(softmax_output, word_list[i], word_list[j])
 
-    def back_prop_grad_update(self, softmax_output, y_truth, word):
-        index_context = list(self.vocab.keys()).index(word)
-        index_center = list(self.vocab.keys()).index(word)
+    def back_prop_grad_update(self, softmax_output, center_word, context_word):
+        y_truth = self.get_one_hot_encoded_word(context_word)
+        index_context = list(self.vocab.keys()).index(context_word)
+        index_center = list(self.vocab.keys()).index(center_word)
         self.W1[index_center, :] -= self.alpha * (self.W2[:, index_context] - np.sum(self.W2 * softmax_output.T, axis=1)).T
         self.W2[:, index_center] -= self.alpha * (self.W1[index_center, :] - np.sum(self.W1.T * softmax_output.T, axis=1))
 
-    def get_one_hot_encoded_word(vocab_len, word):
-        one_hot_encoded_word = np.zeros((vocab_len, 1))
+    def get_one_hot_encoded_word(self, word):
+        one_hot_encoded_word = np.zeros((len(self.vocab), 1))
         index_of_word = list(self.vocab.keys()).index('word')
         one_hot_encoded_word[index_of_word] = 1
         return one_hot_encoded_word
