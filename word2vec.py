@@ -1,23 +1,34 @@
 from collections import OrderedDict
 from nltk.tokenize import sent_tokenize
 import numpy as np
+import math
 
 
 class Word2VecDeepNeuralNet:
-    def __init__(self, n_features, learning_rate, window_size, file_path, epochs=100):
+    def __init__(self, n_features, learning_rate, window_size, file_path, epochs=2):
         self.file_path = file_path
         self.build_vocab()
-        self.W1 = np.random.randn(len(self.vocab), n_features)
-        self.W2 = np.random.randn(n_features, len(self.vocab))
+        # self.W1 = np.random.randn(len(self.vocab), n_features)
+        # self.W2 = np.random.randn(n_features, len(self.vocab))
+
+        self.W1 = np.random.uniform(low=-0.5/n_features, high=0.5/n_features, size=(len(self.vocab), n_features))
+        self.W2 = np.random.uniform(low=-0.5/n_features, high=0.5/n_features, size=(n_features, len(self.vocab)))
         self.alpha = learning_rate
         self.window_size = window_size
         self.epochs = 100
         # self.text_list = text_list
 
+    def softmax(self):
+        numerators = np.exp(self.W2_linear_out)
+        denominator = np.sum(numerators)
+        # softmax_output = np.divide(numerators/denominator)
+        softmax_output = numerators/denominator
+        return softmax_output
+
     def forward_prop(self, input_word):
         self.W1_linear_out = np.dot(self.W1.T, input_word)
         self.W2_linear_out = np.dot(self.W2.T, self.W1_linear_out)
-        softmax_output = np.exp(self.W2_linear_out)/np.sum(np.exp(self.W2_linear_out))
+        softmax_output = self.softmax()
         return softmax_output
 
     def process(self):
@@ -26,14 +37,14 @@ class Word2VecDeepNeuralNet:
                 word_list = sentence.split()
                 for i in range(len(word_list)):
                     # one_hot_encoded_center_word = get_one_hot_encoded_word(vocab_len, word_list[i])
-                    for j in range(-len(self.window_size)/2, len(self.window_size)/2+1):
+                    for j in range(-int((self.window_size)/2), int((self.window_size)/2+1)):
                         if j == 0:
                             continue
                         index = i + j
                         if index < 0 or index >= len(word_list):
                             continue
                         else:
-                            encoded_center_word = get_one_hot_encoded_word(len(self.vocab), word_list[i])
+                            encoded_center_word = self.get_one_hot_encoded_word(word_list[i])
                             softmax_output = self.forward_prop(encoded_center_word)
                              # pass center and context words
                             self.back_prop_grad_update(softmax_output, word_list[i], word_list[j])
@@ -42,12 +53,13 @@ class Word2VecDeepNeuralNet:
         y_truth = self.get_one_hot_encoded_word(context_word)
         index_context = list(self.vocab.keys()).index(context_word)
         index_center = list(self.vocab.keys()).index(center_word)
+        # self.W1[index_center, :] -= self.alpha * (self.W2[:, index_context] - np.sum(self.W2 * softmax_output.T, axis=1))
         self.W1[index_center, :] -= self.alpha * (self.W2[:, index_context] - np.sum(self.W2 * softmax_output.T, axis=1))
         self.W2[:, index_center] -= self.alpha * (self.W1[index_center, :] - np.sum(self.W1.T * softmax_output.T, axis=1))
 
     def get_one_hot_encoded_word(self, word):
         one_hot_encoded_word = np.zeros((len(self.vocab), 1))
-        index_of_word = list(self.vocab.keys()).index('word')
+        index_of_word = list(self.vocab.keys()).index(word)
         one_hot_encoded_word[index_of_word] = 1
         return one_hot_encoded_word
 
@@ -76,5 +88,6 @@ class Word2VecDeepNeuralNet:
 if __name__ == "__main__":
     path = 'C:/GitProjects/Word2Vec Python Implementation/input.txt'
     my_nlp_nn = Word2VecDeepNeuralNet(50, 0.001, 4, path)
+    my_nlp_nn.process()
     print(my_nlp_nn.W1)
     print(my_nlp_nn.W2)
